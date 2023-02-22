@@ -60,14 +60,15 @@ for item in tqdm(list_catigories_1lv):
                 except Exception:
                     name = 'none'
                 try:
-                    price = re.search('[0-9. ]+',item_cart.find('strong', class_="product-item__price").getText()) # Вытащить цену
+                    price = item_cart.find('strong', class_="product-item__price") # Вытащить цену со скидкой
+                    price.span.decompose()
                 except Exception:
                     price = 'none'
 
                 carts.append({
                     "url": url,
                     "name": name,
-                    "price": price.group(0),
+                    "price": price.get_text().strip()
                 })
                 print(carts)
                 exit()
