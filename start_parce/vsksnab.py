@@ -3,6 +3,7 @@ import json
 import time
 from bs4 import BeautifulSoup
 import re
+from tqdm import tqdm
 
 start_time = time.time()
 
@@ -21,16 +22,21 @@ soup = BeautifulSoup(req.text, "lxml")
 # найти последнее значение в пагинации
 pages_count = int(soup.find("ul", class_="page-numbers").find_all("a", class_="page-numbers")[-2].text)
 # цикл по пагинации
-for i in range(1, pages_count + 1):
-    url_page = f"{url}page/{i}/"
+for i in tqdm(range(1, pages_count + 1)):
+    if i == 1:
+        url_page = url
+    else:
+        url_page = f"{url}page/{i}/"
+    
 
     req = requests.get(url_page, headers=headers)
     soup = BeautifulSoup(req.text, "lxml")
 
     link_products_list = soup.find_all('li', 'type-product')
+
     for item_cart in link_products_list:
         try:
-            url = url + item_cart.find('a', class_="woocommerce-LoopProduct-link").get('href')
+            urli = item_cart.find('a', class_="woocommerce-LoopProduct-link").get('href')
         except Exception:
             url = 'none'
         try:
@@ -44,11 +50,14 @@ for i in range(1, pages_count + 1):
             price = 'none'
 
         carts.append({
-            "url": url,
+            "url": urli,
             "name": name,
             "price": price.group(0),
         })
-    time.sleep(5)
-print(carts)
-with open("../resul_parce/carts_vsksnab.json", "w", encoding="utf-8") as file:
+
+
+# print(carts)
+
+
+with open("resul_parce/carts_vsksnab.json", "w", encoding="utf-8") as file:
     json.dump(carts, file, indent=4, ensure_ascii=False)
