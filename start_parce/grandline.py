@@ -39,7 +39,7 @@ for item in tqdm(list_cat_url):
 
     # найти последнее значение в пагинации
     pages_count = int(soup.find("ul", class_="paging").find_all("a", class_="paging__link")[-2].text)
-
+    print(pages_count)
     # цикл по пагинации
     for i in tqdm(range(1, pages_count + 1)):
         url_page = f"{item['url_cat']}?page={i}"

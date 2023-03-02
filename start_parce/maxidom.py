@@ -3,10 +3,12 @@ import json
 import time
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+import re
 
 start_time = time.time()
 
 list_cat_url = []
+list_cat_2url = []
 count = 0
 carts = []
 
@@ -32,13 +34,81 @@ for item in tqdm(list_cat_url):
     soup = BeautifulSoup(req.text, "lxml")
 
     count += 1
-    print(f"Обработка {count} каталога ")
+    print(f"Сборка ссылок с {count} каталога ")
 
-    list_catigories_2lv = soup.find_all('figure', class_="category-first")
+    list_catigories_2lv = soup.find_all(class_="it_categories_a")
     for item in list_catigories_2lv:
-        item = item.find("a").find_next().get('href')
-        print(item)
-        exit()
-        list_cat_url.append({
-            'url_cat': f"{url}{item}",
-        })
+        if item.get("href"):
+            item = item.get("href")
+
+            list_cat_2url.append({
+                'url_cat': f"{url}{item}",
+            })
+        else:
+            item = item.find_all("a")
+            item = item[1].get("href")
+            list_cat_2url.append({
+                'url_cat': f"{url}{item}",
+            })
+
+# Цикл для перехода по категориям
+for item in tqdm(list_cat_2url):
+    req = requests.get(item['url_cat'], headers=headers)
+    soup = BeautifulSoup(req.text, "lxml")
+
+    try:
+        # найти последнее значение в пагинации
+        pages_count = int(soup.find("ul", class_="ul-cat-pager").find_all("a")[-2].text)
+        # цикл по пагинации
+        for i in range(1, 2): # pages_count + 1):
+            url_page = f"{item['url_cat']}?PAGEN_3={i}"
+
+            req = requests.get(url_page, headers=headers)
+            soup = BeautifulSoup(req.text, "lxml")
+
+            link_products_list = soup.find_all('article', 'item-list group')
+            for item_cart in link_products_list:
+                try:
+                    url = "https://grmsd.ru" + item_cart.find('a', class_="name-big").get('href')
+                except Exception:
+                    url = 'none'
+                try:
+                    name = item_cart.find('a', class_="name-big").getText()
+                except Exception:
+                    name = 'none'
+                try:
+                    price = re.search('[0-9 ]+', item_cart.find('span', class_="price-list").getText().strip())
+                except Exception:
+                    price = 'none'
+
+                carts.append({
+                    "url": url,
+                    "name": name.strip(),
+                    "price": price.group(0),
+                })
+                # print(carts)
+    except:
+        link_products_list = soup.find_all('article', 'item-list group')
+        for item_cart in link_products_list:
+            try:
+                url = "https://grmsd.ru" + item_cart.find('a', class_="name-big").get('href')
+            except Exception:
+                url = 'none'
+            try:
+                name = item_cart.find('a', class_="name-big").getText()
+            except Exception:
+                name = 'none'
+            try:
+                price = re.search('[0-9 ]+', item_cart.find('span', class_="price-list").getText().strip())
+            except Exception:
+                price = 'none'
+
+            carts.append({
+                "url": url,
+                "name": name.strip(),
+                "price": price.group(0),
+            })
+            # print(carts)
+# print(carts)
+with open("../resul_parce/carts_maxidom.json", "w", encoding="utf-8") as file:
+    json.dump(carts, file, indent=4, ensure_ascii=False)
