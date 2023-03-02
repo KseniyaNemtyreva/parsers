@@ -27,6 +27,7 @@ for i in tqdm(range(1, pages_count + 1)):
         url_page = url
     else:
         url_page = f"{url}page/{i}/"
+    
 
     req = requests.get(url_page, headers=headers)
     soup = BeautifulSoup(req.text, "lxml")
@@ -37,7 +38,7 @@ for i in tqdm(range(1, pages_count + 1)):
         try:
             urli = item_cart.find('a', class_="woocommerce-LoopProduct-link").get('href')
         except Exception:
-            urli = 'none'
+            url = 'none'
         try:
             name = item_cart.find('h2', class_="woocommerce-loop-product__title").getText()
         except Exception:
@@ -54,8 +55,9 @@ for i in tqdm(range(1, pages_count + 1)):
             "price": price.group(0),
         })
 
+
 # print(carts)
 
 
-with open("../resul_parce/carts_vsksnab.json", "w", encoding="utf-8") as file:
+with open("resul_parce/carts_vsksnab.json", "w", encoding="utf-8") as file:
     json.dump(carts, file, indent=4, ensure_ascii=False)
